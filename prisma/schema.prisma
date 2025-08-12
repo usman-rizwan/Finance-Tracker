@@ -20,15 +20,20 @@ model Post {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+  id             String           @id @default(cuid())
+  name           String
+  email          String
+  emailVerified  Boolean
+  image          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  sessions       Session[]
+  accounts       Account[]
+
+   wallets         Wallet[]
+  transactions    Transaction[]
+  monthlyBalances MonthlyBalance[]
+  dues            Due[]
 
   @@unique([email])
   @@map("user")
@@ -77,4 +82,102 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String
+  currency  String
+  balance   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id])
+  transactions    Transaction[]
+  monthlyBalances MonthlyBalance[]
+}
+
+model Transaction {
+  id       String          @id @default(cuid())
+  userId   String
+  walletId String
+  type     TransactionType
+
+  amount         Decimal @db.Decimal(28, 8)
+  openingBalance Decimal @db.Decimal(28, 8)
+  closingBalance Decimal @db.Decimal(28, 8)
+
+  title       String
+  description String
+
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([userId, date])
+  @@index([walletId, date])
+}
+
+model MonthlyBalance {
+  id             String   @id @default(cuid())
+  userId         String
+  walletId       String
+  year           Int
+  month          Int
+  openingBalance Decimal  @db.Decimal(28, 8)
+  totalIncome    Decimal  @default("0") @db.Decimal(28, 8)
+  totalExpense   Decimal  @default("0") @db.Decimal(28, 8)
+  closingBalance Decimal  @db.Decimal(28, 8)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@unique([userId, walletId, year, month], name: "user_wallet_year_month_unique")
+  @@index([userId, year, month])
+  @@index([walletId, year, month])
+}
+
+model Notes {
+  id          String   @id @default(cuid())
+  tite        String
+  description String
+  amount      Decimal? @db.Decimal(28, 8)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Due {
+  id         String    @id @default(cuid())
+  userId     String?
+  personName String
+  amount     String
+  type       DueType
+  note       String
+  dueDate    DateTime?
+  isSettled  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  ADJUSMENT
+  TRANSFER
+}
+
+enum DueType {
+  LEND
+  BORROW
 }
