@@ -89,8 +89,8 @@ model Wallet {
   userId    String
   name      String
   type      String
-  currency  String
-  balance   String
+  currency  String?
+  balance   Decimal  @db.Decimal(28,8)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
