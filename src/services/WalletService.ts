@@ -343,10 +343,69 @@ const updateTransaction = async (data: {
     });
 };
 
+const deletTransaction = async (transactionId: string, userId: string) => {
+    return db.$transaction(async (dbTx) => {
+        const existingTransaction = await db.transaction.findUnique({
+            where: { id: transactionId }
+        })
+
+        if (!existingTransaction) throw new Error("Transaction not found");
+        if (existingTransaction.userId !== userId) throw new Error("Unauthorized");
+
+
+        const { walletId, type, amount, date } = existingTransaction;
+        const { year, month } = getYearMonth(new Date(date));
+
+
+        //reverse the transaction(totals and wallet)
+
+        if (type === 'INCOME') {
+            await dbTx.monthlyBalance.update({
+                where: {
+                    monthly_balance_per_wallet: {
+                        userId,
+                        walletId,
+                        year,
+                        month
+                    }
+                },
+                data: { totalIncome: { decrement: amount as any }, closingBalance: { decrement: amount as any } },
+
+            })
+            await dbTx.wallet.update({ where: { id: walletId }, data: { balance: { decrement: amount as any } } });
+        } else if (type === "EXPENSE") {
+            await dbTx.monthlyBalance.update({
+                where: {
+                    monthly_balance_per_wallet: {
+                        userId,
+                        walletId,
+                        year,
+                        month
+                    }
+                },
+                data: { totalExpense: { decrement: amount as any }, closingBalance: { increment: amount as any } },
+            });
+            await dbTx.wallet.update({ where: { id: walletId }, data: { balance: { increment: amount as any } } });
+        } else {
+            throw new Error("Transfer/Adjustment deletion not supported here");
+        }
+
+        await dbTx.transaction.delete({ where: { id: transactionId } });
+
+        return {
+            ok: true
+        }
+
+
+
+    })
+}
+
 export {
     createPrimaryWallet,
     createWallet,
     createTransaction,
-    updateTransaction
+    updateTransaction,
+    deleteTransaction
 };
 
