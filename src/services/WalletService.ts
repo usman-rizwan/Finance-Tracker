@@ -170,11 +170,11 @@ const createTransaction = async (data: {
             })
 
             await dbTx.wallet.update({
-                where:{
-                    id:wallet.id
+                where: {
+                    id: wallet.id
                 },
-                data:{
-                    balance:{decrement:transactionAmount as any}
+                data: {
+                    balance: { decrement: transactionAmount as any }
                 }
             })
 
@@ -219,6 +219,20 @@ const updateTransaction = async (data: {
 
         if (existingTransaction.userId !== data.userId) {
             throw new Error("Unauthorized to update this transaction");
+        }
+
+        // checck if only title and desxription updated 
+        const checkIfDetailsChanged = newTransactionAmount === existingTransaction.amount.toString() &&
+            new Date(transactionDate).getTime() === new Date(existingTransaction.date).getTime();
+
+        if (checkIfDetailsChanged) {
+            return dbTx.transaction.update({
+                where: { id: data.id },
+                data: {
+                    title: data.title,
+                    description: data.description
+                }
+            });
         }
 
         const wallet = await dbTx.wallet.findUnique({
