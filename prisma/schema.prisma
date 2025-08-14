@@ -139,7 +139,7 @@ model MonthlyBalance {
   user   User   @relation(fields: [userId], references: [id])
   wallet Wallet @relation(fields: [walletId], references: [id])
 
-  @@unique([userId, walletId, year, month], name: "user_wallet_year_month_unique")
+  @@unique([userId, walletId, year, month], name: "monthly_balance_per_wallet")
   @@index([userId, year, month])
   @@index([walletId, year, month])
 }
