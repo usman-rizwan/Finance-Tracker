@@ -468,6 +468,7 @@ export {
     createWallet,
     createTransaction,
     updateTransaction,
-    deleteTransaction
+    deleteTransaction,
+    transferBetweenWallets,
 };
 
