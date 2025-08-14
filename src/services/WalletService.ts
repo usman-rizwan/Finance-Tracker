@@ -193,3 +193,146 @@ const createTransaction = async (data: {
         return updateTransaction;
     })
 }
+
+const updateTransaction = async (data: {
+    id: string;
+    userId: string;
+    amount: string | number;
+    title: string;
+    description: string;
+    date?: string | Date;
+}) => {
+    const transactionDate = data.date ? new Date(data.date) : new Date();
+    const newTransactionAmount = data.amount.toString();
+    const { year, month } = getYearMonth(transactionDate);
+
+    return db.$transaction(async (dbTx) => {
+        // Get the existing transaction
+        const existingTransaction = await dbTx.transaction.findUnique({
+            where: { id: data.id },
+            include: { wallet: true }
+        });
+
+        if (!existingTransaction) {
+            throw new Error("Transaction not found");
+        }
+
+        if (existingTransaction.userId !== data.userId) {
+            throw new Error("Unauthorized to update this transaction");
+        }
+
+        const wallet = await dbTx.wallet.findUnique({
+            where: { id: existingTransaction.walletId }
+        });
+
+        if (!wallet) {
+            throw new Error("Wallet not found");
+        }
+
+        // Get the old transaction details
+        const oldAmount = existingTransaction.amount.toString();
+        const oldType = existingTransaction.type;
+        const oldDate = existingTransaction.date;
+        const { year: oldYear, month: oldMonth } = getYearMonth(oldDate);
+
+        const oldMonthlyBalance = await ensureMonthlyBalance(
+            dbTx,
+            data.userId,
+            existingTransaction.walletId,
+            oldYear,
+            oldMonth
+        );
+
+        const newMonthlyBalance = await ensureMonthlyBalance(
+            dbTx,
+            data.userId,
+            existingTransaction.walletId,
+            year,
+            month
+        );
+
+        // Reverse the old transaction's effect
+        if (oldType === 'INCOME') {
+            await dbTx.monthlyBalance.update({
+                where: { id: oldMonthlyBalance.id },
+                data: {
+                    totalIncome: { decrement: oldAmount as any },
+                    closingBalance: { decrement: oldAmount as any }
+                }
+            });
+
+            await dbTx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { decrement: oldAmount as any } }
+            });
+        } else if (oldType === 'EXPENSE') {
+            await dbTx.monthlyBalance.update({
+                where: { id: oldMonthlyBalance.id },
+                data: {
+                    totalExpense: { decrement: oldAmount as any },
+                    closingBalance: { increment: oldAmount as any }
+                }
+            });
+
+            await dbTx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { increment: oldAmount as any } }
+            });
+        }
+
+        // Apply the new transaction's effect (same type, different amount/date)
+        if (oldType === 'INCOME') {
+            await dbTx.monthlyBalance.update({
+                where: { id: newMonthlyBalance.id },
+                data: {
+                    totalIncome: { increment: newTransactionAmount as any },
+                    closingBalance: { increment: newTransactionAmount as any }
+                }
+            });
+
+            await dbTx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { increment: newTransactionAmount as any } }
+            });
+        } else if (oldType === 'EXPENSE') {
+            // Add expense to new monthly balance
+            await dbTx.monthlyBalance.update({
+                where: { id: newMonthlyBalance.id },
+                data: {
+                    totalExpense: { increment: newTransactionAmount as any },
+                    closingBalance: { decrement: newTransactionAmount as any }
+                }
+            });
+
+            await dbTx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { decrement: newTransactionAmount as any } }
+            });
+        }
+
+        const updatedMonthlyBalance = await dbTx.monthlyBalance.findUnique({
+            where: { id: newMonthlyBalance.id }
+        });
+
+        const updatedTransaction = await dbTx.transaction.update({
+            where: { id: data.id },
+            data: {
+                amount: newTransactionAmount,
+                title: data.title,
+                description: data.description,
+                date: transactionDate,
+                closingBalance: updatedMonthlyBalance?.closingBalance
+            }
+        });
+
+        return updatedTransaction;
+    });
+};
+
+export {
+    createPrimaryWallet,
+    createWallet,
+    createTransaction,
+    updateTransaction
+};
+
