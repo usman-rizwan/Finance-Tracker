@@ -343,7 +343,7 @@ const updateTransaction = async (data: {
     });
 };
 
-const deletTransaction = async (transactionId: string, userId: string) => {
+const deleteTransaction = async (transactionId: string, userId: string) => {
     return db.$transaction(async (dbTx) => {
         const existingTransaction = await db.transaction.findUnique({
             where: { id: transactionId }
@@ -400,6 +400,8 @@ const deletTransaction = async (transactionId: string, userId: string) => {
 
     })
 }
+
+
 
 export {
     createPrimaryWallet,
