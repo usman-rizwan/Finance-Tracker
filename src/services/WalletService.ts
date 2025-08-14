@@ -3,6 +3,9 @@ import { db } from "~/server/db";
 
 import type { TransactionType } from "@prisma/client";
 
+const getYearMonth = (date: Date) => {
+    return { year: date.getFullYear(), month: date.getMonth() + 1 }
+}
 
 const createPrimaryWallet = async (userId: string) => {
     try {
@@ -38,7 +41,7 @@ const createWallet = async (userId: string, data: any) => {
     }
 }
 
-const ensureMonthlyBalance = async (prismaTx: typeof db, userId: string, walletId: string, year: number, month: number) => {
+const ensureMonthlyBalance = async (prismaTx: any, userId: string, walletId: string, year: number, month: number) => {
 
     try {
         const userWalletByMonth = { userId, walletId, year, month } as any;
@@ -92,10 +95,101 @@ const ensureMonthlyBalance = async (prismaTx: typeof db, userId: string, walletI
                 closingBalance: openingBalance,
             },
         })
-            
+
         return newBalance;
     } catch (error: any) {
         console.log('Error creating/fetching monthly balance:', error);
         throw new Error('Error creating/fetching monthly balance:', error)
     }
+}
+
+const createTransaction = async (data: {
+    userId: string;
+    walletId: string;
+    type: TransactionType;
+    amount: string | number;
+    title: string;
+    description: string;
+    date?: string | Date;
+}) => {
+    const transactionDate = data.date ? new Date(data.date) : new Date();
+    const transactionAmount = data.amount.toString();
+    const { year, month } = getYearMonth(transactionDate);
+
+    return db.$transaction(async (dbTx) => {
+        const wallet = await dbTx.wallet.findUnique({
+            where: { id: data.walletId }
+        }
+        );
+        if (!wallet) throw new Error("Wallet not found");
+
+        const monthlyBalance = await ensureMonthlyBalance(
+            dbTx,
+            data.userId,
+            data.walletId,
+            year,
+            month
+        )
+
+        const openingBalance = monthlyBalance.closingBalance;
+
+        const initialTransaction = await dbTx.transaction.create({
+            data: {
+                userId: data.userId,
+                walletId: data.walletId,
+                type: data.type,
+                amount: transactionAmount,
+                openingBalance,
+                closingBalance: openingBalance, // Temporary, will be updated
+                title: data.title ?? "Transaction",
+                description: data.description ?? "",
+                date: transactionDate,
+            }
+        })
+
+        if (data.type == 'INCOME') {
+            await dbTx.monthlyBalance.update({
+                where: { id: monthlyBalance.id },
+                data: {
+                    totalIncome: { increment: transactionAmount as any },
+                    closingBalance: { increment: transactionAmount as any }
+                }
+            })
+
+            await dbTx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { increment: transactionAmount as any } }
+            })
+        } else if (data.type == 'EXPENSE') {
+            await dbTx.monthlyBalance.update({
+                where: { id: monthlyBalance.id },
+                data: {
+                    totalExpense: { increment: transactionAmount as any },
+                    closingBalance: { decrement: transactionAmount as any }
+                }
+            })
+
+            await dbTx.wallet.update({
+                where:{
+                    id:wallet.id
+                },
+                data:{
+                    balance:{decrement:transactionAmount as any}
+                }
+            })
+
+        } else {
+            throw new Error("Unsupported transaction type for createTransactionAtomic");
+        }
+
+        const updateMonthlyBalance = await dbTx.monthlyBalance.findUnique({ where: { id: monthlyBalance.id } });
+
+        const updateTransaction = await dbTx.transaction.update({
+            where: { id: initialTransaction.id },
+            data: {
+                closingBalance: updateMonthlyBalance?.closingBalance
+            }
+        })
+        return updateTransaction;
+    })
 }
