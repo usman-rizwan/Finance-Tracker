@@ -401,7 +401,67 @@ const deleteTransaction = async (transactionId: string, userId: string) => {
     })
 }
 
+const transferBetweenWallets = async (data: {
+    userId: string;
+    senderWalletId: string;
+    recieverWalletId: string;
+    amount: string | number;
+    title: string,
+    description: string,
+    date?: string | Date;
+}) => {
+    const date = data.date ? new Date(data.date) : new Date();
 
+    const wallets = await db.wallet.findMany({
+        where: {
+            id: {
+                in: [data.senderWalletId, data.recieverWalletId] as any
+            }
+        }
+    })
+
+    if (wallets.length !== 2) {
+        throw new Error("One or both wallets not found.");
+    }
+
+    const [senderWallet, receiverWallet] = wallets;
+
+    if (!senderWallet || !receiverWallet) {
+        throw new Error("One or both wallets not found.");
+    }
+
+    if (senderWallet.userId !== data.userId || receiverWallet.userId !== data.userId) {
+        throw new Error("Unauthorized access to one or both wallets.");
+    }
+
+    return db.$transaction(async (dbTx) => {
+        const transferExpense = await createTransaction({
+            userId: data.userId,
+            walletId: data.senderWalletId,
+            type: "EXPENSE",
+            amount: data.amount,
+            title: data.title,
+            description: data.description,
+            date,
+
+        })
+
+        // create income to reciver's wallet
+        const transferIncome = await createTransaction({
+            userId: data.userId,
+            walletId: data.recieverWalletId,
+            type: "INCOME",
+            amount: data.amount,
+            title: data.title,
+            description: data.description,
+            date,
+
+        })
+
+        return { transferExpense, transferIncome };
+    })
+
+}
 
 export {
     createPrimaryWallet,
