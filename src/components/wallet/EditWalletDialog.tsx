@@ -70,12 +70,9 @@ const walletTypes = [
 ];
 
 const currencies = [
-  { value: 'USD', label: 'USD ($)', symbol: '$' },
-  { value: 'EUR', label: 'EUR (€)', symbol: '€' },
-  { value: 'GBP', label: 'GBP (£)', symbol: '£' },
-  { value: 'JPY', label: 'JPY (¥)', symbol: '¥' },
-  { value: 'AUD', label: 'AUD (A$)', symbol: 'A$' },
-  { value: 'CAD', label: 'CAD (C$)', symbol: 'C$' },
+    { value: 'PKR', label: 'PKR (RS)', symbol: 'RS' },
+    { value: 'USD', label: 'USD ($)', symbol: '$' },
+    { value: 'AUD', label: 'AUD (A$)', symbol: 'A$' },
 ];
 
 export default function EditWalletDialog({ 
