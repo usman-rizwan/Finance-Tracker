@@ -20,7 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { formatCurrency } from "~/lib/utils";
 import { createWallet, updateWallet, deleteWallet } from "./action";
-import type { CreateWalletFormData, UpdateWalletFormData } from "~/lib/validation";
+import type { CreateWalletFormData, UpdateWalletFormData } from "~/lib/validation-schemas";
 
 interface Wallet {
   id: string;
