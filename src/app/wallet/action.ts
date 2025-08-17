@@ -25,23 +25,24 @@ const createPrimaryWallet = async (userId: string) => {
 
 
 const createWallet = async (userId: string, data: any) => {
-    console.log('userId',userId);
-    console.log('data',data);
-    
     try {
         const initialBalance = data.initialBalance ?? 0
         const wallet = await db.wallet.create({
             data: {
-              name: data.name,
-              type: data.type,
-              currency: data.currency,
-              balance: initialBalance,
-              userId,
+                name: data.name,
+                type: data.type,
+                currency: data.currency,
+                balance: initialBalance,
+                userId,
             }
-          });
-      
-        return wallet;
-    } catch (error) {
+        });
+
+        return {
+            success:true,
+            message:'Wallet created successfully',
+            wallet
+        }
+        } catch (error) {
         console.error('Error creating wallet->', error);
         throw new Error('Erro creating wallet')
     }
@@ -91,7 +92,11 @@ const updateWallet = async (data: {
             }
         });
 
-        return updatedWallet;
+        return {
+            success: true,
+            message: "Wallet updated successfully",
+            wallet: updatedWallet
+        }
     } catch (error) {
         console.error('Error updating wallet:', error);
         throw new Error('Error updating wallet');
@@ -146,7 +151,7 @@ const deleteWallet = async (walletId: string, userId: string) => {
         });
 
         return {
-            ok: true,
+            suucess: true,
             message: "Wallet deleted successfully"
         };
     });

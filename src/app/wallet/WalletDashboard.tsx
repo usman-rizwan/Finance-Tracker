@@ -33,12 +33,12 @@ interface Wallet {
   updatedAt: string;
 }
 
-interface WalletsClientProps {
+interface WalletsDashboardProps {
   wallets: Wallet[];
   user: {};
 }
 
-export default function WalletsClient({ wallets, user }: WalletsClientProps) {
+export default function WalletsDashboard({ wallets, user }: WalletsDashboardProps) {
   const [walletsData, setWalletsData] = useState(wallets);
   const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
   const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
@@ -87,14 +87,19 @@ export default function WalletsClient({ wallets, user }: WalletsClientProps) {
   ];
   const handleAddWallet = async (walletData: CreateWalletFormData) => {
     try {
-      const newWallet = await createWallet(user.id, walletData);
-      setWalletsData(prev => [newWallet, ...prev]);
-      router.refresh();
+      const response = await createWallet(user.id, walletData);
+  
+      if (response?.success && response.wallet) {
+        setWalletsData(prev => [response.wallet, ...prev]);
+        router.refresh();
+      } else {
+        console.error("Wallet creation failed:", response?.message || "Unknown error");
+      }
     } catch (error) {
       console.error("Error adding wallet:", error);
-      // You can add toast notification here
     }
   };
+  
 
   const handleEditWallet = (walletId: string) => {
     const wallet = walletsData.find(w => w.id === walletId);
@@ -103,18 +108,23 @@ export default function WalletsClient({ wallets, user }: WalletsClientProps) {
     }
   };
 
-  const handleUpdateWallet = async (walletId: string, data: UpdateWalletFormData) => {
-    try {
-      const updatedWallet = await updateWallet({ id: walletId, userId:user.id, ...data });
-      setWalletsData(prev => 
-        prev.map(w => w.id === walletId ? { ...w, ...updatedWallet } : w)
-      );
-      router.refresh();
-    } catch (error) {
-      console.error("Error updating wallet:", error);
-      // You can add toast notification here
-    }
-  };
+    const handleUpdateWallet = async (walletId: string, data: UpdateWalletFormData) => {
+      try {
+        const response = await updateWallet({ id: walletId, userId: user.id, ...data });
+
+        if (response?.success && response.wallet) {
+          setWalletsData(prev =>
+            prev.map(w => w.id === walletId ? { ...w, ...response.wallet } : w)
+          );
+    
+          router.refresh();
+        } else {
+          console.error("Update failed:", response?.message || "Unknown error");
+        }
+      } catch (error) {
+        console.error("Error updating wallet:", error);
+      }
+    };
 
   const handleDeleteWallet = (walletId: string) => {
     const wallet = walletsData.find(w => w.id === walletId);
@@ -125,12 +135,16 @@ export default function WalletsClient({ wallets, user }: WalletsClientProps) {
 
   const handleConfirmDelete = async (walletId: string) => {
     try {
-      await deleteWallet(walletId, user.id);
-      setWalletsData(prev => prev.filter(w => w.id !== walletId));
-      router.refresh();
+      const response = await deleteWallet(walletId, user.id);
+      if (response.suucess) {
+        setWalletsData(prev => prev.filter(w => w.id !== walletId));
+        router.refresh();
+      }else{
+        console.error("Delete failed:", response?.message || "Unknown error");
+      }
+     
     } catch (error) {
       console.error("Error deleting wallet:", error);
-      // You can add toast notification here
     }
   };
 

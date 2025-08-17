@@ -3,10 +3,13 @@ import { ProtectedRoute } from "~/components/auth/ProtectedRoute";
 import { getServerSession } from "~/lib/auth";
 import { db } from "~/server/db";
 import { createPrimaryWallet } from "./action";
-import WalletsClient from "./WalletClient";
+import WalletsDashboard from "./WalletDashboard";
 
 export default async function WalletPage() {
     const { user } = await getServerSession();
+
+
+    
 
     let wallets = await db.wallet.findMany({
         where: { userId: user.id },
@@ -24,7 +27,7 @@ export default async function WalletPage() {
 
     return (
         <ProtectedRoute>
-            <WalletsClient wallets={wallets} user={user}/>
+            <WalletsDashboard wallets={wallets} user={user}/>
         </ProtectedRoute>
     );
 }

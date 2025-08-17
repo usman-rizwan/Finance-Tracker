@@ -81,7 +81,7 @@ export default function WalletCard({
   const isPositiveChange = monthlyChange >= 0;
 
   return (
-    <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 select-none  cursor-pointer" >
       {/* Gradient Background */}
       <div className={cn(
         "absolute inset-0 bg-gradient-to-br opacity-90",
@@ -116,9 +116,9 @@ export default function WalletCard({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 cursor-pointer"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4 text-white " />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
