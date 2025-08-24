@@ -37,7 +37,47 @@ export const updateWalletSchema = z.object({
   currency: z.string().min(3, "Currency is required").max(3, "Currency must be 3 characters"),
 });
 
+export const createTransactionSchema = z.object({
+  type: z.enum(["INCOME", "EXPENSE"], {
+    required_error: "Please select transaction type",
+  }),
+  walletId: z.string().min(1, "Please select a wallet"),
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Amount must be a valid positive number",
+  }),
+  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+  date: z.string().optional(),
+});
+
+export const updateTransactionSchema = z.object({
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Amount must be a valid positive number",
+  }),
+  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+  date: z.string().optional(),
+});
+
+export const transferSchema = z.object({
+  senderWalletId: z.string().min(1, "Please select sender wallet"),
+  receiverWalletId: z.string().min(1, "Please select receiver wallet"),
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Amount must be a valid positive number",
+  }),
+  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+  date: z.string().optional(),
+}).refine((data) => data.senderWalletId !== data.receiverWalletId, {
+  message: "Sender and receiver wallets must be different",
+  path: ["receiverWalletId"],
+});
+
+
 export type SignInFormData = z.infer<typeof signInSchema>;
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type CreateWalletFormData = z.infer<typeof createWalletSchema>;
 export type UpdateWalletFormData = z.infer<typeof updateWalletSchema>;
+export type CreateTransactionFormData = z.infer<typeof createTransactionSchema>;
+export type UpdateTransactionFormData = z.infer<typeof updateTransactionSchema>;
+export type TransferFormData = z.infer<typeof transferSchema>;

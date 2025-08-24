@@ -11,19 +11,21 @@ const geist = Geist({
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  
-  
+
+
   const isAuthPage = pathname === '/sign-in' || pathname === '/sign-up';
   const isLandingPage = pathname === '/';
-  
+
   if (isAuthPage || isLandingPage) {
     return <>{children}</>;
   }
-  
+
   return (
-    <DashboardLayout>
-      {children}
-    </DashboardLayout>
+    <div suppressContentEditableWarning suppressHydrationWarning className=" !pointer-events-auto">
+      <DashboardLayout >
+        {children}
+      </DashboardLayout>
+    </div>
   );
 }
 

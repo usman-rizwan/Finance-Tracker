@@ -127,7 +127,7 @@ export default function EditWalletDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md pointer-events-auto">
         <DialogHeader>
           <DialogTitle>Edit Wallet</DialogTitle>
           <DialogDescription>

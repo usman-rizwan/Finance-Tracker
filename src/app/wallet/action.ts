@@ -52,9 +52,12 @@ const getWallets = async (userId: string) => {
     try {
         const wallets = await db.wallet.findMany({
             where: { userId },
-            orderBy: { createdAt: 'asc' }
+            orderBy: { createdAt: "desc" }
         });
-        return wallets;
+        return wallets.map(wallet => ({
+            ...wallet,
+            balance: wallet.balance.toString(), 
+          }));
     } catch (error) {
         console.error('Error fetching wallets:', error);
         throw new Error('Error fetching wallets');
