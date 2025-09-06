@@ -33,7 +33,7 @@ const navigation = [
   { name: "Add Expense", href: "/add-expense", icon: PlusCircle },
   { name: "Transactions", href: "/transactions", icon: CreditCard },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Budget", href: "/budget", icon: Target },
+  { name: "Overview", href: "/activity", icon: Target },
   { name: "Wallet", href: "/wallet", icon: Wallet },
 ];
 

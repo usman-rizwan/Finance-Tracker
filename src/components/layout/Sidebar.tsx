@@ -28,7 +28,7 @@ const navigation = [
   { name: "Transactions", href: "/transactions", icon: CreditCard },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Reports", href: "/reports", icon: PieChart },
-  { name: "Budget", href: "/budget", icon: Target },
+  { name: "Overview", href: "/activity", icon: Target },
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Receipts", href: "/receipts", icon: Receipt },
 ];
