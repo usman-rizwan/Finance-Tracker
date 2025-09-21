@@ -20,3 +20,10 @@ export function formatDate(date: Date | string) {
     day: "numeric",
   }).format(new Date(date))
 }
+
+export function calculatePercentageChange(oldValue: number, newValue: number) {
+  if (oldValue === 0) {
+    return newValue === 0 ? 0 : 100;
+  }
+  return ((newValue - oldValue) / Math.abs(oldValue)) * 100;
+}
