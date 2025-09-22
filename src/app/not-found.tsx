@@ -114,11 +114,11 @@ export default function NotFound() {
             </Link>
             
             <Link 
-              href="/budget" 
+              href="/activity" 
               className="p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 text-center group"
             >
               <PieChart className="w-5 h-5 text-gray-600 group-hover:text-purple-600 mx-auto mb-1" />
-              <span className="text-sm text-gray-700 group-hover:text-purple-700">Budget</span>
+              <span className="text-sm text-gray-700 group-hover:text-purple-700">Activity</span>
             </Link>
           </div>
         </div>
