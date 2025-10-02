@@ -20,17 +20,17 @@ model Post {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String
-  emailVerified  Boolean
-  image          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime
-  sessions       Session[]
-  accounts       Account[]
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
 
-   wallets         Wallet[]
+  wallets         Wallet[]
   transactions    Transaction[]
   monthlyBalances MonthlyBalance[]
   dues            Due[]
@@ -85,15 +85,15 @@ model Verification {
 }
 
 model Wallet {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  type      String
-  currency  String?
-  balance   Decimal  @db.Decimal(28,8)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id              String           @id @default(cuid())
+  userId          String
+  name            String
+  type            String
+  currency        String?
+  balance         Decimal          @db.Decimal(28, 8)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  initialBalance  String?
   user            User             @relation(fields: [userId], references: [id])
   transactions    Transaction[]
   monthlyBalances MonthlyBalance[]
@@ -106,8 +106,6 @@ model Transaction {
   type     TransactionType
 
   amount         Decimal @db.Decimal(28, 8)
-  openingBalance Decimal @db.Decimal(28, 8)
-  closingBalance Decimal @db.Decimal(28, 8)
 
   title       String
   description String
