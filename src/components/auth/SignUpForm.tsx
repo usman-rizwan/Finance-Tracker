@@ -11,6 +11,8 @@ import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth-client";
 import { signUpSchema, type SignUpFormData } from "~/lib/validation-schemas";
 import { useAuth } from "~/contexts/AuthContext";
+import { toast } from "sonner"
+import { createPrimaryWallet } from "~/app/wallet/action";
 
 export function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,16 +43,19 @@ export function SignUpForm() {
 
       if (res.error) {
         setError(res.error.message || "Failed to create account");
+        toast.error(res.error.message || "Failed to create account");
       } else if (res.data?.user) {
-        // Immediately set user state to prevent redirect loop
         setUser({
           id: res.data.user.id,
           email: res.data.user.email || "",
           name: res.data.user.name || "",
         });
+        toast.success("Account created successfully!");
+        await createPrimaryWallet(res?.data?.user?.id);
         router.push("/dashboard");
       }
     } catch (err) {
+      toast.error("An unexpected error occurred");
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -72,7 +77,7 @@ export function SignUpForm() {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium text-green-700">
+          <Label htmlFor="name" className="text-sm font-medium text-primary">
             Full Name
           </Label>
           <div className="relative">
@@ -82,7 +87,7 @@ export function SignUpForm() {
               type="text"
               placeholder="Your full name"
               {...register("name")}
-              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+              className={`pl-12 h-12 border-gray-300  rounded-lg ${errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
                 }`}
             />
           </div>
@@ -92,7 +97,7 @@ export function SignUpForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-green-700">
+          <Label htmlFor="email" className="text-sm font-medium text-primary">
             Email
           </Label>
           <div className="relative">
@@ -102,7 +107,7 @@ export function SignUpForm() {
               type="email"
               placeholder="Your email"
               {...register("email")}
-              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+              className={`pl-12 h-12 border-gray-300  rounded-lg ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
                 }`}
             />
           </div>
@@ -112,7 +117,7 @@ export function SignUpForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-green-700">
+          <Label htmlFor="password" className="text-sm font-medium text-primary">
             Password
           </Label>
           <div className="relative">
@@ -122,7 +127,7 @@ export function SignUpForm() {
               type={showPassword ? "text" : "password"}
               placeholder="Your Password"
               {...register("password")}
-              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+              className={`pl-12 pr-12 h-12 border-gray-300  rounded-lg ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
                 }`}
             />
             <button
@@ -139,7 +144,7 @@ export function SignUpForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-medium text-green-700">
+          <Label htmlFor="confirmPassword" className="text-sm font-medium text-primary">
             Confirm Password
           </Label>
           <div className="relative">
@@ -149,7 +154,7 @@ export function SignUpForm() {
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm Password"
               {...register("confirmPassword")}
-              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+              className={`pl-12 pr-12 h-12 border-gray-300  rounded-lg ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
                 }`}
             />
             <button
@@ -165,27 +170,6 @@ export function SignUpForm() {
           )}
         </div>
 
-        <div className="flex items-start space-x-2">
-          <input
-            type="checkbox"
-            id="acceptedTerms"
-            {...register("acceptedTerms")}
-            className="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500 mt-0.5"
-          />
-          <Label htmlFor="acceptedTerms" className="text-sm text-gray-600 cursor-pointer leading-relaxed">
-            I agree to the{" "}
-            <Link href="/terms" className="text-green-600 hover:text-green-800 transition-colors">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-green-600 hover:text-green-800 transition-colors">
-              Privacy Policy
-            </Link>
-          </Label>
-        </div>
-        {errors.acceptedTerms && (
-          <p className="text-red-500 text-sm mt-1">{errors.acceptedTerms.message}</p>
-        )}
 
         <Button
           type="submit"

@@ -11,6 +11,7 @@ import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth-client";
 import { signInSchema, type SignInFormData } from "~/lib/validation-schemas";
 import { useAuth } from "~/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -38,17 +39,19 @@ export function SignInForm() {
       });
       
       if (res.error) {
+        toast.error(res.error.message || "Failed to sign in");
         setError(res.error.message || "Failed to sign in");
       } else if (res.data?.user) {
-        // Immediately set user state to prevent redirect loop
         setUser({
           id: res.data.user.id,
           email: res.data.user.email || "",
           name: res.data.user.name || "",
         });
+        toast.success("Signed in successfully!");
         router.push("/dashboard");
       }
     } catch (err) {
+      toast.error("An unexpected error occurred");
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
