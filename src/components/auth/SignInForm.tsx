@@ -121,7 +121,7 @@ export function SignInForm() {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+          className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] cursor-pointer"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
@@ -133,14 +133,14 @@ export function SignInForm() {
           )}
         </Button>
 
-        <div className="text-center">
+        {/* <div className="text-center ">
           <Link
             href="/forgot-password"
-            className="text-gray-500 hover:text-purple-600 transition-colors text-sm"
+            className="text-gray-500 hover:text-purple-600 transition-colors text-sm "
           >
             Forgot your Password?
           </Link>
-        </div>
+        </div> */}
 
         <div className="text-center">
           <span className="text-gray-500 text-sm">OR</span>

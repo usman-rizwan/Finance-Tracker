@@ -33,12 +33,12 @@ export function SignUpForm() {
     setError("");
 
     try {
-      const res = await authClient.signUp.email({ 
-        email: data.email, 
+      const res = await authClient.signUp.email({
+        email: data.email,
         password: data.password,
         name: data.name
       });
-      
+
       if (res.error) {
         setError(res.error.message || "Failed to create account");
       } else if (res.data?.user) {
@@ -70,7 +70,7 @@ export function SignUpForm() {
             {error}
           </div>
         )}
-        
+
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium text-green-700">
             Full Name
@@ -82,9 +82,8 @@ export function SignUpForm() {
               type="text"
               placeholder="Your full name"
               {...register("name")}
-              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${
-                errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-              }`}
+              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                }`}
             />
           </div>
           {errors.name && (
@@ -103,9 +102,8 @@ export function SignUpForm() {
               type="email"
               placeholder="Your email"
               {...register("email")}
-              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${
-                errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-              }`}
+              className={`pl-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                }`}
             />
           </div>
           {errors.email && (
@@ -124,9 +122,8 @@ export function SignUpForm() {
               type={showPassword ? "text" : "password"}
               placeholder="Your Password"
               {...register("password")}
-              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${
-                errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-              }`}
+              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                }`}
             />
             <button
               type="button"
@@ -152,9 +149,8 @@ export function SignUpForm() {
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm Password"
               {...register("confirmPassword")}
-              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${
-                errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-              }`}
+              className={`pl-12 pr-12 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-lg ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                }`}
             />
             <button
               type="button"
@@ -194,7 +190,7 @@ export function SignUpForm() {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+          className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] cursor-pointer"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
