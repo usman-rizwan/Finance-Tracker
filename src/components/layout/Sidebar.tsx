@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   TrendingUp, 
   Home, 
@@ -21,6 +21,9 @@ import {
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
+import { useAuth } from "~/contexts/AuthContext";
+import { toast } from "sonner";
+
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -38,12 +41,15 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ className }: SidebarProps) {
+  const { user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    // Add logout logic here
-    console.log("Logout clicked");
+  const handleLogout = async() => {
+    await signOut();
+    toast.success("Logged out successfully");
+    router.push("/");
   };
 
   return (

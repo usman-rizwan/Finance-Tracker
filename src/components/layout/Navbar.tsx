@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useAuth } from "~/contexts/AuthContext";
+import { toast } from "sonner";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -45,6 +46,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await signOut();
+    toast.success("Logged out successfully");
     router.push("/");
   };
 
@@ -58,7 +60,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 cursor-pointer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
@@ -67,7 +69,7 @@ export default function Navbar() {
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">FinanceTracker</span>
+              <span className="text-xl font-bold text-gray-900">Finance Tracker</span>
             </Link>
           </div>
 
