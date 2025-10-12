@@ -128,7 +128,7 @@ export default function NotFound() {
           <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-blue-600 rounded-md flex items-center justify-center">
             <TrendingUp className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm">FinanceTracker - Smart Expense Management</span>
+          <span className="text-sm">Finance Tracker - Smart Expense Management</span>
         </div>
       </div>
 
