@@ -20,6 +20,7 @@ import { formatCurrency } from "~/lib/utils";
 import { createTransaction, updateTransaction, deleteTransaction, getTransactions } from "./action";
 import type { CreateTransactionFormData, UpdateTransactionFormData } from "~/lib/validation-schemas";
 import { startOfMonth, endOfMonth } from "date-fns";
+import { toast } from 'sonner';
 
 interface Transaction {
   id: string;
@@ -62,7 +63,6 @@ export default function TransactionsDasboard({
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Calculate statistics
   const totalIncome = transactions
     .filter(t => t.type === 'INCOME')
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
@@ -117,8 +117,10 @@ export default function TransactionsDasboard({
       
       if (result.success) {
         await refreshTransactions();
+        toast.success("Transaction added successfully!");
       }
     } catch (error) {
+      toast.error("Error adding transaction");
       console.error("Error adding transaction:", error);
     } finally {
       setIsLoading(false);
@@ -142,9 +144,11 @@ export default function TransactionsDasboard({
       });
       
       if (result.success) {
+        toast.success("Transaction updated successfully!");
         await refreshTransactions({ startDate: data.date, endDate: data.date });
       }
     } catch (error) {
+      toast.error("Error updating transaction");
       console.error("Error updating transaction:", error);
     } finally {
       setIsLoading(false);
@@ -161,9 +165,11 @@ export default function TransactionsDasboard({
       const result = await deleteTransaction(transactionId, userId);
       
       if (result.success) {
+        toast.success("Transaction deleted successfully!");
         await refreshTransactions();
       }
     } catch (error) {
+      toast.error("Error deleting transaction");
       console.error("Error deleting transaction:", error);
     } finally {
       setIsLoading(false);

@@ -70,7 +70,7 @@ const ensureMonthlyBalance = async (prismaTx: any, userId: string, walletId: str
 }
 
 const getTransactions = async (userId: string, filters?: {
-    type?: 'INCOME' | 'EXPENSE';
+    type?: 'INCOME' | 'EXPENSE' | 'TRANSFER';
     walletId?: string;
     startDate?: Date | string;
     endDate?: Date | string;
@@ -122,8 +122,6 @@ const getTransactions = async (userId: string, filters?: {
         return transactions.map(transaction => ({
             ...transaction,
             amount: transaction.amount.toString(),
-            openingBalance: transaction.openingBalance.toString(),
-            closingBalance: transaction.closingBalance.toString(),
             date: transaction.date.toISOString(),
         }));
     } catch (error) {
@@ -161,20 +159,16 @@ const createTransaction = async (data: {
         )
         console.log('monthlyBalance:', monthlyBalance);
 
-        const openingBalance = monthlyBalance.data.closingBalance;
-
         const initialTransaction = await dbTx.transaction.create({
             data: {
                 userId: data.userId,
                 walletId: data.walletId,
                 type: data.type,
                 amount: transactionAmount,
-                openingBalance,
-                closingBalance: openingBalance, // Temporary, will be updated
                 title: data.title ?? "Transaction",
                 description: data.description ?? "",
                 date: transactionDate,
-            }
+            } as any
         })
         console.log('initialTransaction:', initialTransaction);
 
@@ -214,19 +208,9 @@ const createTransaction = async (data: {
             throw new Error("Unsupported transaction type for createTransactionAtomic");
         }
 
-        const updateMonthlyBalance = await dbTx.monthlyBalance.findUnique({ where: { id: monthlyBalance.data.id } });
-        console.log('updateMonthlyBalance:', updateMonthlyBalance);
-
-        const updateTransaction = await dbTx.transaction.update({
-            where: { id: initialTransaction.id },
-            data: {
-                closingBalance: updateMonthlyBalance?.closingBalance
-            }
-        })
-
         return {
             success: true,
-            data: updateTransaction,
+            data: initialTransaction,
             message: "Transaction created successfully"
         };
     })
@@ -332,7 +316,6 @@ const updateTransaction = async (data: {
             });
         }
 
-        // Apply the new transaction's effect (same type, different amount/date)
         if (oldType === 'INCOME') {
             await dbTx.monthlyBalance.update({
                 where: { id: newMonthlyBalance.data.id },
@@ -362,26 +345,19 @@ const updateTransaction = async (data: {
             });
         }
 
-        const updatedMonthlyBalance = await dbTx.monthlyBalance.findUnique({
-            where: { id: newMonthlyBalance.data.id }
-        });
-
         const updatedTransaction = await dbTx.transaction.update({
             where: { id: data.id },
             data: {
                 amount: newTransactionAmount,
                 title: data.title,
                 description: data.description,
-                date: transactionDate,
-                closingBalance: updatedMonthlyBalance?.closingBalance
+                date: transactionDate
             }
         });
 
         const transactionData = {
             ...updatedTransaction,
             amount: updatedTransaction.amount.toString(),
-            openingBalance: updatedTransaction.openingBalance?.toString(),
-            closingBalance: updatedTransaction.closingBalance?.toString(),
             date: updatedTransaction.date.toISOString(),
             createdAt: updatedTransaction.createdAt.toISOString(),
             updatedAt: updatedTransaction.updatedAt.toISOString(),
@@ -438,8 +414,29 @@ const deleteTransaction = async (transactionId: string, userId: string) => {
                 data: { totalExpense: { decrement: amount as any }, closingBalance: { increment: amount as any } },
             });
             await dbTx.wallet.update({ where: { id: walletId }, data: { balance: { increment: amount as any } } });
+        } else if (type === "TRANSFER") {
+            // For transfer transactions, we need to handle both sender and receiver
+            // This is a simplified approach - in a real app you might want to link transfer pairs
+            await dbTx.monthlyBalance.update({
+                where: {
+                    monthly_balance_per_wallet: {
+                        userId,
+                        walletId,
+                        year,
+                        month
+                    }
+                },
+                data: { 
+                    totalIncome: { decrement: amount as any }, 
+                    closingBalance: { decrement: amount as any } 
+                },
+            });
+            await dbTx.wallet.update({ 
+                where: { id: walletId }, 
+                data: { balance: { decrement: amount as any } } 
+            });
         } else {
-            throw new Error("Transfer/Adjustment deletion not supported here");
+            throw new Error("Adjustment deletion not supported here");
         }
 
         await dbTx.transaction.delete({ where: { id: transactionId } });
@@ -462,6 +459,8 @@ const transferBetweenWallets = async (data: {
     date?: string | Date;
 }) => {
     const date = data.date ? new Date(data.date) : new Date();
+    const transferAmount = data.amount.toString();
+    const { year, month } = getYearMonth(date);
 
     const wallets = await db.wallet.findMany({
         where: {
@@ -485,39 +484,90 @@ const transferBetweenWallets = async (data: {
         throw new Error("Unauthorized access to one or both wallets.");
     }
 
+    // Check if sender has sufficient balance
+    if (parseFloat(senderWallet.balance.toString()) < parseFloat(transferAmount)) {
+        throw new Error("Insufficient balance in sender wallet.");
+    }
+
     return db.$transaction(async (dbTx) => {
-        const transferExpense = await createTransaction({
-            userId: data.userId,
-            walletId: data.senderWalletId,
-            type: "EXPENSE",
-            amount: data.amount,
-            title: data.title,
-            description: data.description,
-            date,
+        // Ensure monthly balances exist for both wallets
+        const senderMonthlyBalance = await ensureMonthlyBalance(
+            dbTx,
+            data.userId,
+            data.senderWalletId,
+            year,
+            month
+        );
 
-        })
+        const receiverMonthlyBalance = await ensureMonthlyBalance(
+            dbTx,
+            data.userId,
+            data.recieverWalletId,
+            year,
+            month
+        );
 
-        // create income to reciver's wallet
-        const transferIncome = await createTransaction({
-            userId: data.userId,
-            walletId: data.recieverWalletId,
-            type: "INCOME",
-            amount: data.amount,
-            title: data.title,
-            description: data.description,
-            date,
+        // Create transfer transaction for sender (EXPENSE)
+        const senderTransaction = await dbTx.transaction.create({
+            data: {
+                userId: data.userId,
+                walletId: data.senderWalletId,
+                type: "TRANSFER",
+                amount: transferAmount,
+                title: `Transfer to ${receiverWallet.name}`,
+                description: data.description || `Transfer to ${receiverWallet.name}`,
+                date: date,
+            } as any
+        });
 
-        })
+        // Create transfer transaction for receiver (INCOME)
+        const receiverTransaction = await dbTx.transaction.create({
+            data: {
+                userId: data.userId,
+                walletId: data.recieverWalletId,
+                type: "TRANSFER",
+                amount: transferAmount,
+                title: `Transfer from ${senderWallet.name}`,
+                description: data.description || `Transfer from ${senderWallet.name}`,
+                date: date,
+            } as any
+        });
+
+        // Update sender wallet balance and monthly stats
+        await dbTx.wallet.update({
+            where: { id: data.senderWalletId },
+            data: { balance: { decrement: transferAmount as any } }
+        });
+
+        await dbTx.monthlyBalance.update({
+            where: { id: senderMonthlyBalance.data.id },
+            data: {
+                totalExpense: { increment: transferAmount as any },
+                closingBalance: { decrement: transferAmount as any }
+            }
+        });
+
+        // Update receiver wallet balance and monthly stats
+        await dbTx.wallet.update({
+            where: { id: data.recieverWalletId },
+            data: { balance: { increment: transferAmount as any } }
+        });
+
+        await dbTx.monthlyBalance.update({
+            where: { id: receiverMonthlyBalance.data.id },
+            data: {
+                totalIncome: { increment: transferAmount as any },
+                closingBalance: { increment: transferAmount as any }
+            }
+        });
 
         return {
             success: true,
-            transferExpense,
-            transferIncome,
-            message: 'Transfer successfull'
-
+            senderTransaction,
+            receiverTransaction,
+            message: 'Transfer completed successfully'
         };
-    })
-
+    });
 }
 
 
