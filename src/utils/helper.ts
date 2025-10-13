@@ -98,10 +98,15 @@ function calculateWalletBalanceAtDate(
     return balance;
   }, initialBalance);
 }
+function getString(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
 
 
 export {
   navigationList,
   calculateRunningBalances,
-  calculateWalletBalanceAtDate
+  calculateWalletBalanceAtDate,
+  getString
 }
