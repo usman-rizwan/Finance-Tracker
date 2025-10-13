@@ -28,7 +28,7 @@ import { formatCurrency, formatDate } from "~/lib/utils";
 
 interface Transaction {
   id: string;
-  type: 'INCOME' | 'EXPENSE';
+  type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
   amount: string;
   title: string;
   description: string | null;
@@ -44,6 +44,36 @@ interface TransactionTableProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   isLoading?: boolean;
+}
+
+function transactionBadge(transaction: Transaction) {
+  const baseClass = "border text-sm font-medium px-2.5 py-0.5 rounded inline-flex items-center";
+
+  switch (transaction.type) {
+    case 'INCOME':
+      return (
+        <Badge className={`${baseClass} bg-green-100 text-green-800 border-green-200`}>
+          <TrendingUp className="w-3 h-3 mr-1" />
+          INCOME
+        </Badge>
+      );
+    case 'EXPENSE':
+      return (
+        <Badge className={`${baseClass} bg-red-100 text-red-800 border-red-200`}>
+          <TrendingDown className="w-3 h-3 mr-1" />
+          EXPENSE
+        </Badge>
+      );
+    case 'TRANSFER':
+      return (
+        <Badge className={`${baseClass} bg-blue-100 text-blue-800 border-blue-200`}>
+          <Wallet className="w-3 h-3 mr-1" />
+          TRANSFER
+        </Badge>
+      );
+    default:
+      return null;
+  }
 }
 
 export default function TransactionTable({
@@ -66,7 +96,6 @@ export default function TransactionTable({
       </div>
     );
   }
-
 
   const totalIncome = transactions
     .filter(t => t.type === 'INCOME')
@@ -93,13 +122,10 @@ export default function TransactionTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((transaction ,index) => (
+          {transactions.map((transaction, index) => (
             <TableRow key={transaction.id} className="hover:bg-gray-50">
-              <TableCell>
-                <div>
-                  {index + 1})
-                </div>
-              </TableCell>
+              <TableCell>{`${index + 1})`}</TableCell>
+
               <TableCell>
                 <div>
                   <div className="font-medium text-gray-900">{transaction.title}</div>
@@ -131,26 +157,24 @@ export default function TransactionTable({
               </TableCell>
 
               <TableCell>
-                <Badge
-                  variant={transaction.type === 'INCOME' ? 'default' : 'secondary'}
-                  className={`${transaction.type === 'INCOME'
-                    ? 'bg-green-100 text-green-800 border-green-200'
-                    : 'bg-red-100 text-red-800 border-red-200'
-                    }`}
-                >
-                  {transaction.type === 'INCOME' ? (
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 mr-1" />
-                  )}
-                  {transaction.type}
-                </Badge>
+                {transactionBadge(transaction)}
               </TableCell>
 
               <TableCell className="text-right">
-                <span className={`font-semibold ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                  {transaction.type === 'INCOME' ? '+' : '-'}
+                <span
+                  className={`font-semibold ${
+                    transaction.type === 'INCOME'
+                      ? 'text-green-600'
+                      : transaction.type === 'EXPENSE'
+                      ? 'text-red-600'
+                      : 'text-blue-600'
+                  }`}
+                >
+                  {transaction.type === 'INCOME'
+                    ? '+'
+                    : transaction.type === 'EXPENSE'
+                    ? '-'
+                    : ''}
                   {formatCurrency(transaction.amount)}
                 </span>
               </TableCell>
@@ -186,6 +210,8 @@ export default function TransactionTable({
             </TableRow>
           ))}
         </TableBody>
+
+        {/* Totals */}
         <tfoot className="bg-gray-50 dark:bg-zinc-900 border-t">
           <TableRow>
             <TableCell colSpan={5} className="py-3 px-4 text-sm text-muted-foreground font-medium text-left">
@@ -210,8 +236,9 @@ export default function TransactionTable({
               Net Balance
             </TableCell>
             <TableCell
-              className={`py-4 px-4 text-right text-base font-bold ${netBalance >= 0 ? 'text-green-700' : 'text-red-700'
-                }`}
+              className={`py-4 px-4 text-right text-base font-bold ${
+                netBalance >= 0 ? 'text-green-700' : 'text-red-700'
+              }`}
             >
               {netBalance >= 0 ? '+' : '-'}
               {formatCurrency(Math.abs(netBalance).toString())}

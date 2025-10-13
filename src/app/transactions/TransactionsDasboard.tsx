@@ -195,8 +195,7 @@ export default function TransactionsDasboard({
       endDate: filters?.endDate ?? defaultEndDate,
       ...filters,
     };
-    console.log("Fetching transactions with filters:", finalFilters);
-    console.log("User ID:", userId);
+    
     
 
     const newTransactions = await getTransactions(userId, finalFilters);
