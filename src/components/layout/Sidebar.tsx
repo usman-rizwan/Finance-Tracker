@@ -2,39 +2,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  TrendingUp, 
-  Home, 
-  PlusCircle, 
-  BarChart3, 
-  Settings, 
-  User, 
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Wallet,
-  CreditCard,
-  Target,
-  Receipt,
-  PieChart
-} from "lucide-react";
+import { TrendingUp, Settings, LogOut, ChevronLeft, ChevronRight, } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/contexts/AuthContext";
 import { toast } from "sonner";
-
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Add Expense", href: "/add-expense", icon: PlusCircle },
-  { name: "Transactions", href: "/transactions", icon: CreditCard },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Reports", href: "/reports", icon: PieChart },
-  { name: "Overview", href: "/activity", icon: Target },
-  { name: "Wallet", href: "/wallet", icon: Wallet },
-  { name: "Receipts", href: "/receipts", icon: Receipt },
-];
+import { navigationList } from "~/utils/helper";
 
 interface SidebarProps {
   className?: string;
@@ -46,7 +20,7 @@ export default function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = async() => {
+  const handleLogout = async () => {
     await signOut();
     toast.success("Logged out successfully");
     router.push("/");
@@ -84,7 +58,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {navigation.map((item) => {
+        {navigationList.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (

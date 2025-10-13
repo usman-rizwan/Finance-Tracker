@@ -2,20 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  TrendingUp, 
-  Home, 
-  PlusCircle, 
-  BarChart3, 
-  Settings, 
-  User, 
-  LogOut,
-  Menu,
-  X,
-  Wallet,
-  CreditCard,
-  Target
-} from "lucide-react";
+import { TrendingUp, LogOut, Menu, X, Settings, User, } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -28,15 +15,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { useAuth } from "~/contexts/AuthContext";
 import { toast } from "sonner";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Add Expense", href: "/add-expense", icon: PlusCircle },
-  { name: "Transactions", href: "/transactions", icon: CreditCard },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Overview", href: "/activity", icon: Target },
-  { name: "Wallet", href: "/wallet", icon: Wallet },
-];
+import { navigationList } from "~/utils/helper";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,18 +54,17 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => {
+            {navigationList.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                       ? "bg-purple-100 text-purple-700"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.name}</span>
@@ -171,18 +149,17 @@ export default function Navbar() {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
             {user ? (
               <>
-                {navigation.map((item) => {
+                {navigationList.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                        isActive
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${isActive
                           ? "bg-purple-100 text-purple-700"
                           : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                      }`}
+                        }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Icon className="w-5 h-5" />
