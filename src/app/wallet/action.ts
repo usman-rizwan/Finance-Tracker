@@ -2,6 +2,8 @@
 import { db } from "~/server/db";
 
 import type { TransactionType } from "@prisma/client";
+import { startOfMonth, subMonths } from "date-fns";
+import { calculatePercentageChange } from "~/lib/utils";
 
 const createPrimaryWallet = async (userId: string) => {
     try {
@@ -26,6 +28,8 @@ const createPrimaryWallet = async (userId: string) => {
 
 const createWallet = async (userId: string, data: any) => {
     try {
+        console.log('Creating wallet with data:', data);
+
         const initialBalance = data.initialBalance ?? 0
         const wallet = await db.wallet.create({
             data: {
@@ -33,16 +37,17 @@ const createWallet = async (userId: string, data: any) => {
                 type: data.type,
                 currency: data.currency,
                 balance: initialBalance,
+                initialBalance: data.initialBalance,
                 userId,
             }
         });
 
         return {
-            success:true,
-            message:'Wallet created successfully',
+            success: true,
+            message: 'Wallet created successfully',
             wallet
         }
-        } catch (error) {
+    } catch (error) {
         console.error('Error creating wallet->', error);
         throw new Error('Erro creating wallet')
     }
@@ -56,8 +61,8 @@ const getWallets = async (userId: string) => {
         });
         return wallets.map(wallet => ({
             ...wallet,
-            balance: wallet.balance.toString(), 
-          }));
+            balance: wallet.balance.toString(),
+        }));
     } catch (error) {
         console.error('Error fetching wallets:', error);
         throw new Error('Error fetching wallets');
@@ -154,18 +159,145 @@ const deleteWallet = async (walletId: string, userId: string) => {
         });
 
         return {
-            suucess: true,
+            success: true,
             message: "Wallet deleted successfully"
         };
     });
 }
 
+const getMonthlyStats = async (userId: string) => {
+    const currentDate = new Date();
+    const currentMonth = startOfMonth(currentDate);
+    const perviousMonth = startOfMonth(subMonths(currentDate, 1));
+
+    const previousMonthNumber = perviousMonth.getMonth() + 1;
+    const previousYear = perviousMonth.getFullYear();
+
+    const currentMonthStats = await db.transaction.groupBy({
+        by: ["type"],
+        where: {
+            userId,
+            date: { gte: currentMonth }
+        },
+        _sum: {
+            amount: true
+        }
+    });
+
+    const perviousMonthStats = await db.transaction.groupBy({
+        by: ["type"],
+        where: {
+            userId,
+            date: { gte: perviousMonth, lt: currentMonth }
+        },
+        _sum: {
+            amount: true
+        }
+    });
+
+
+    const income = currentMonthStats?.find(stat => stat.type === 'INCOME')?._sum.amount || 0;
+    const expense = currentMonthStats?.find(stat => stat.type === 'EXPENSE')?._sum.amount || 0;
+    const savings = income - expense;
+
+    // Compute previous month stats
+    const previousIncome = perviousMonthStats?.find(stat => stat.type === 'INCOME')?._sum.amount || 0;
+    const previousExpense = perviousMonthStats?.find(stat => stat.type === 'EXPENSE')?._sum.amount || 0;
+    const savingsPrevious = previousIncome - previousExpense;
+
+    const totalBalanceCurrent = savings;
+    const totalBalancePrevious = savingsPrevious;
+
+
+
+    return {
+        totalIncome: income,
+        totalExpense: expense,
+        savings,
+        totalBalanceCurrent,
+        totalBalanceChangePercent: calculatePercentageChange(totalBalancePrevious, totalBalanceCurrent),
+        totalIncomeChangePercent: calculatePercentageChange(previousIncome, income),
+        totalExpenseChangePercent: calculatePercentageChange(previousExpense, expense),
+        savingsChangePercent: calculatePercentageChange(savingsPrevious, savings)
+    };
+};
+
+const getOverallMonthlySummary = async (userId: string, year: number, month: number) => {
+    const balances = await db.monthlyBalance.findMany({
+        where: { userId, year, month }
+    });
+
+    const summary = balances.reduce(
+        (acc, balance) => {
+            acc.opening += balance.openingBalance.toNumber();
+            acc.totalIncome += balance.totalIncome.toNumber();
+            acc.totalExpense += balance.totalExpense.toNumber();
+            acc.closing += balance.closingBalance.toNumber();
+            return acc;
+        },
+        {
+            opening: 0,
+            totalIncome: 0,
+            totalExpense: 0,
+            closing: 0
+        }
+    );
+
+    return {
+        year,
+        month,
+        summary: {
+            opening: +summary.opening.toFixed(2),
+            totalIncome: +summary.totalIncome.toFixed(2),
+            totalExpense: +summary.totalExpense.toFixed(2),
+            closing: +summary.closing.toFixed(2)
+        }
+    };
+};
+
+
+
+
+
+
+const transferMoney = async (data: {
+    userId: string;
+    senderWalletId: string;
+    receiverWalletId: string;
+    amount: string | number;
+    title: string;
+    description: string;
+    date?: string | Date;
+}) => {
+    try {
+        // Import the transfer function from transactions
+        const { transferBetweenWallets } = await import('../transactions/action');
+
+        const result = await transferBetweenWallets({
+            userId: data.userId,
+            senderWalletId: data.senderWalletId,
+            recieverWalletId: data.receiverWalletId,
+            amount: data.amount,
+            title: data.title,
+            description: data.description,
+            date: data.date
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Error transferring money:', error);
+        throw new Error(error instanceof Error ? error.message : 'Error transferring money');
+    }
+};
 
 export {
     createPrimaryWallet,
     createWallet,
     getWallets,
     updateWallet,
-    deleteWallet
+    deleteWallet,
+    getMonthlyStats,
+    getOverallMonthlySummary,
+    transferMoney
 }
 

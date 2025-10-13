@@ -2,10 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { 
-  Wallet, 
-  CreditCard, 
-  Banknote, 
+import {
+  Wallet,
+  CreditCard,
+  Banknote,
   DollarSign,
   MoreVertical,
   TrendingUp,
@@ -48,7 +48,7 @@ const WalletTypeIcons = {
 
 const WalletTypeColors = {
   cash: "from-green-500 to-emerald-600",
-  card: "from-blue-500 to-indigo-600", 
+  card: "from-blue-500 to-indigo-600",
   bank: "from-purple-500 to-violet-600",
   digital: "from-orange-500 to-red-500",
 } as const;
@@ -56,27 +56,27 @@ const WalletTypeColors = {
 const WalletTypeBadgeColors = {
   cash: "bg-green-100 text-green-800 border-green-200",
   card: "bg-blue-100 text-blue-800 border-blue-200",
-  bank: "bg-purple-100 text-purple-800 border-purple-200", 
+  bank: "bg-purple-100 text-purple-800 border-purple-200",
   digital: "bg-orange-100 text-orange-800 border-orange-200",
 } as const;
 
-export default function WalletCard({ 
-  wallet, 
-  onEdit, 
-  onDelete, 
-  onTransfer 
+export default function WalletCard({
+  wallet,
+  onEdit,
+  onDelete,
+  onTransfer
 }: WalletCardProps) {
   const [isBalanceVisible, setIsBalanceVisible] = React.useState(true);
-  
+console.log('wallet', wallet);
+
   const walletType = wallet.type as keyof typeof WalletTypeIcons;
   const IconComponent = WalletTypeIcons[walletType] || Wallet;
   const gradientColor = WalletTypeColors[walletType] || WalletTypeColors.digital;
   const badgeColor = WalletTypeBadgeColors[walletType] || WalletTypeBadgeColors.digital;
-  
+
   const balance = parseFloat(wallet.balance);
   const currency = wallet.currency || 'USD';
-  
-  // Mock data for demo - in real app this would come from transactions
+
   const monthlyChange = 125.50;
   const isPositiveChange = monthlyChange >= 0;
 
@@ -87,7 +87,7 @@ export default function WalletCard({
         "absolute inset-0 bg-gradient-to-br opacity-90",
         gradientColor
       )} />
-      
+
       {/* Content */}
       <div className="relative z-10">
         <CardHeader className="pb-4">
@@ -101,8 +101,8 @@ export default function WalletCard({
                   {wallet.name}
                 </CardTitle>
                 <div className="flex items-center space-x-2 mt-1">
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={cn("text-xs border", badgeColor)}
                   >
                     {wallet.type.toUpperCase()}
@@ -110,12 +110,12 @@ export default function WalletCard({
                 </div>
               </div>
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-8 w-8 p-0 text-white hover:bg-white/20 cursor-pointer"
                 >
                   <MoreVertical className="h-4 w-4 text-white " />
@@ -128,7 +128,7 @@ export default function WalletCard({
                 <DropdownMenuItem onClick={() => onTransfer?.(wallet.id)}>
                   Transfer Money
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-red-600"
                   onClick={() => onDelete?.(wallet.id)}
                 >
@@ -172,10 +172,10 @@ export default function WalletCard({
             {/* Monthly Change */}
             <div className="flex items-center justify-between pt-4 border-t border-white/20">
               <div className="flex items-center space-x-2">
-                <div className={cn(
+                {/* <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center",
-                  isPositiveChange 
-                    ? "bg-green-100/20 text-green-100" 
+                  isPositiveChange
+                    ? "bg-green-100/20 text-green-100"
                     : "bg-red-100/20 text-red-100"
                 )}>
                   {isPositiveChange ? (
@@ -192,9 +192,9 @@ export default function WalletCard({
                   )}>
                     {isPositiveChange ? "+" : ""}{formatCurrency(monthlyChange, currency)}
                   </p>
-                </div>
+                </div> */}
               </div>
-              
+
               <div className="text-right">
                 <p className="text-white/80 text-xs">Created</p>
                 <p className="text-white/90 text-sm">
@@ -205,22 +205,24 @@ export default function WalletCard({
 
             {/* Action Buttons */}
             <div className="flex space-x-2 pt-4">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="flex-1 bg-white/20 hover:bg-white/30 text-white border-white/30"
                 variant="outline"
+                onClick={() => onTransfer?.(wallet.id)}
               >
                 <ArrowUpRight className="w-4 h-4 mr-1" />
                 Send
               </Button>
-              <Button 
+              {/* <Button 
                 size="sm" 
                 className="flex-1 bg-white/20 hover:bg-white/30 text-white border-white/30"
                 variant="outline"
+                onClick={() => onTransfer?.(wallet.id)}
               >
                 <ArrowDownRight className="w-4 h-4 mr-1" />
                 Receive
-              </Button>
+              </Button> */}
             </div>
           </div>
         </CardContent>

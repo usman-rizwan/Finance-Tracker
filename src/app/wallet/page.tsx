@@ -2,7 +2,7 @@ import React from "react";
 import { ProtectedRoute } from "~/components/auth/ProtectedRoute";
 import { getServerSession } from "~/lib/auth";
 import { db } from "~/server/db";
-import { createPrimaryWallet } from "./action";
+import { createPrimaryWallet, getMonthlyStats } from "./action";
 import WalletsDashboard from "./WalletDashboard";
 
 export default async function WalletPage() {
@@ -22,7 +22,6 @@ export default async function WalletPage() {
     });
   }
 
-  // Serialize for client component
   const walletData = wallets.map((wallet) => ({
     ...wallet,
     balance: wallet.balance.toString(),
@@ -36,9 +35,10 @@ export default async function WalletPage() {
     updatedAt: user.updatedAt.toISOString(),
   };
 
+  const stats = await getMonthlyStats(user.id);
   return (
     <ProtectedRoute>
-      <WalletsDashboard wallets={walletData} user={userData} />
+      <WalletsDashboard wallets={walletData} user={userData} stats={stats} />
     </ProtectedRoute>
   );
 }

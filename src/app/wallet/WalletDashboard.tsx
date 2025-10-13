@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import DashboardLayout from "~/components/layout/DashboardLayout";
 import WalletCard from "~/components/wallet/WalletCard";
 import AddWalletDialog from "~/components/wallet/AddWalletDialog";
 import EditWalletDialog from "~/components/wallet/EditWalletDialog";
@@ -19,8 +18,11 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { formatCurrency } from "~/lib/utils";
-import { createWallet, updateWallet, deleteWallet } from "./action";
-import type { CreateWalletFormData, UpdateWalletFormData } from "~/lib/validation-schemas";
+import { createWallet, updateWallet, deleteWallet, transferMoney, getWallets } from "./action";
+import type { CreateWalletFormData, UpdateWalletFormData, TransferFormData } from "~/lib/validation-schemas";
+import { toast } from 'sonner';
+import Link from 'next/link';
+import TransferMoneyDialog from "~/components/wallet/TransferMoneyDialog";
 
 interface Wallet {
   id: string;
@@ -33,81 +35,112 @@ interface Wallet {
   updatedAt: string;
 }
 
-interface WalletsDashboardProps {
-  wallets: Wallet[];
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    createdAt: string;
-    updatedAt: string;
-  };
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function WalletsDashboard({ wallets, user }: WalletsDashboardProps) {
+interface Stats {
+  totalBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  savings: number;
+
+  totalIncomeChangePercent?: number;
+  totalExpenseChangePercent?: number;
+  savingsChangePercent?: number;
+}
+
+interface WalletsDashboardProps {
+  wallets: Wallet[];
+  user: User;
+  stats: Stats;
+}
+
+export default function WalletsDashboard({ wallets, user, stats }: WalletsDashboardProps) {
   const [walletsData, setWalletsData] = useState(wallets);
   const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
   const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [selectedWalletForTransfer, setSelectedWalletForTransfer] = useState<string | undefined>(undefined);
   const router = useRouter();
 
-  // Calculate total balance across all wallets
-  const totalBalance = walletsData.reduce(
+  const totalBalance = stats?.totalBalance ?? walletsData.reduce(
     (sum, wallet) => sum + parseFloat(wallet.balance),
     0
   );
 
-  // Mock data for statistics
-  const stats = [
+  const formatChange = (percent?: number) => {
+    if (percent === undefined || percent === null) return "";
+    const rounded = Math.abs(percent).toFixed(1);
+    const sign = percent > 0 ? "+" : percent < 0 ? "−" : "";
+    return `${sign}${rounded}%`;
+  };
+
+
+
+  const WalletStats = [
     {
       label: "Total Balance",
       value: formatCurrency(totalBalance),
-      change: "+12.5%",
+      change: formatChange(stats?.totalBalanceChangePercent),
       icon: DollarSign,
-      color: "text-green-600",
+      color: 'text-green-600',
       bgColor: "bg-green-100"
     },
     {
       label: "Monthly Income",
-      value: formatCurrency(3420),
-      change: "+8.2%",
+      value: formatCurrency(stats?.totalIncome ?? 0),
+      change: formatChange(stats?.totalIncomeChangePercent),
       icon: TrendingUp,
-      color: "text-blue-600",
+      color: 'text-blue-600',
       bgColor: "bg-blue-100"
     },
     {
       label: "Monthly Expenses",
-      value: formatCurrency(2150),
-      change: "-5.1%",
+      value: formatCurrency(stats?.totalExpense ?? 0),
+      change: formatChange(stats?.totalExpenseChangePercent),
       icon: ArrowDownLeft,
-      color: "text-red-600",
+      color: 'text-red-600',
       bgColor: "bg-red-100"
+    },
+    {
+      label: "Savings",
+      value: formatCurrency(stats?.savings ?? 0),
+      change: formatChange(stats?.savingsChangePercent),
+      icon: Wallet,
+      color: 'text-purple-600',
+      bgColor: "bg-purple-100"
     },
     {
       label: "Active Wallets",
       value: walletsData.length.toString(),
       change: walletsData.length > 1 ? `+${walletsData.length - 1}` : "0",
       icon: Wallet,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100"
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-100"
     }
   ];
+
   const handleAddWallet = async (walletData: CreateWalletFormData) => {
     try {
       const response = await createWallet(user.id, walletData);
 
       if (response?.success && response.wallet) {
         setWalletsData(prev => [response.wallet, ...prev]);
-        setTimeout(() => {
-          router.refresh();
-        }, 100);
+        toast.success("Wallet created successfully!");
       } else {
+        toast.error("Failed to create wallet");
         console.error("Wallet creation failed:", response?.message || "Unknown error");
       }
     } catch (error) {
+      toast.error("Error creating wallet");
       console.error("Error adding wallet:", error);
     }
   };
-
 
   const handleEditWallet = (walletId: string) => {
     const wallet = walletsData.find(w => w.id === walletId);
@@ -115,7 +148,6 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
       setEditingWallet(wallet);
     }
   };
-
 
   const handleUpdateWallet = async (walletId: string, data: UpdateWalletFormData) => {
     try {
@@ -134,17 +166,13 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
         );
 
         setEditingWallet(null);
-        setTimeout(() => {
-          router.refresh();
-        }, 100);
-
-        // router.refresh(); // Optional now
+        toast.success("Wallet updated successfully!");
       }
     } catch (error) {
+      toast.error("Error updating wallet");
       console.error("Error updating wallet:", error);
     }
   };
-
 
   const handleDeleteWallet = (walletId: string) => {
     const wallet = walletsData.find(w => w.id === walletId);
@@ -156,25 +184,55 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
   const handleConfirmDelete = async (walletId: string) => {
     try {
       const response = await deleteWallet(walletId, user.id);
-      if (response.suucess) {
+      if (response.success) {
         setWalletsData(prev => prev.filter(w => w.id !== walletId));
         router.refresh();
       } else {
         console.error("Delete failed:", response?.message || "Unknown error");
       }
-
     } catch (error) {
       console.error("Error deleting wallet:", error);
     }
   };
 
   const handleTransferMoney = (walletId: string) => {
-    console.log("Transfer money from wallet:", walletId);
-    // Implement transfer functionality
+    setSelectedWalletForTransfer(walletId);
+    setTransferDialogOpen(true);
+  };
+
+  const handleTransferSubmit = async (transferData: TransferFormData) => {
+    try {
+      const response = await transferMoney({
+        userId: user.id,
+        senderWalletId: transferData.senderWalletId,
+        receiverWalletId: transferData.receiverWalletId,
+        amount: transferData.amount,
+        title: transferData.title,
+        description: transferData.description ?? "",
+        date: transferData.date
+      });
+
+
+      if (response?.success) {
+        const updatedWallets = await getWallets(user.id);
+
+        setWalletsData(updatedWallets);
+
+        setTransferDialogOpen(false);
+        setSelectedWalletForTransfer(undefined);
+
+        toast.success("Money transferred successfully!");
+      } else {
+        toast.error("Failed to transfer money");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error transferring money");
+      console.error("Transfer error:", error);
+    }
   };
 
   return (
-    <div className="space-y-8  !pointer-events-auto">
+    <div className="space-y-8 !pointer-events-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -190,83 +248,88 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
         </div>
         <div className="flex gap-3">
           <Button variant="outline" size="sm">
+          <Link href="/transactions" className="flex items-center">
             <Activity className="w-4 h-4 mr-2" />
             View Transactions
-          </Button>
-          <AddWalletDialog onAddWallet={handleAddWallet} />
-        </div>
+          </Link>
+        </Button>
+
+        <AddWalletDialog onAddWallet={handleAddWallet} />
       </div>
+    </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                    <IconComponent className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <span className={`text-sm font-semibold ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {stat.change}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* Statistics Cards */ }
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    {WalletStats.map((stat, index) => {
+      const IconComponent = stat.icon;
+      return (
+        <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                <IconComponent className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <span className={`text-sm font-semibold ${stat?.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                {stat?.change}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })}
+  </div>
+
+  {/* Quick Actions */ }
+  <Card className="border-0 shadow-lg cursor-pointer" >
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <PieChart className="w-5 h-5" />
+        Quick Actions
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Button
+          variant="outline"
+          className="h-16 flex flex-col gap-2 hover:bg-green-50 hover:border-green-300"
+          onClick={() => setTransferDialogOpen(true)}
+        >
+          <ArrowUpRight className="w-5 h-5 text-green-600" />
+          <span className="text-sm">Transfer Money</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-16 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-300"
+        >
+          <Activity className="w-5 h-5 text-blue-600" />
+          <Link href="/activity" className="flex flex-col items-center">
+            <span className="text-sm">View Analytics</span>
+          </Link>
+        </Button>
+        <Button
+          variant="outline"
+          className="h-16 flex flex-col gap-2 hover:bg-purple-50 hover:border-purple-300"
+        >
+          <Plus className="w-5 h-5 text-purple-600" />
+          <Link href="/transactions" className="flex flex-col items-center"> <span className="text-sm">Add Transaction</span></Link>
+        </Button>
       </div>
+    </CardContent>
+  </Card>
 
-      {/* Quick Actions */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PieChart className="w-5 h-5" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Button
-              variant="outline"
-              className="h-16 flex flex-col gap-2 hover:bg-green-50 hover:border-green-300"
-            >
-              <ArrowUpRight className="w-5 h-5 text-green-600" />
-              <span className="text-sm">Transfer Money</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-16 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-300"
-            >
-              <Activity className="w-5 h-5 text-blue-600" />
-              <span className="text-sm">View Analytics</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-16 flex flex-col gap-2 hover:bg-purple-50 hover:border-purple-300"
-            >
-              <Plus className="w-5 h-5 text-purple-600" />
-              <span className="text-sm">Add Transaction</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Wallets Grid */}
+  {/* Wallets Grid */ }
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
             Your Wallets ({walletsData.length})
           </h2>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" disabled >
             <PieChart className="w-4 h-4 mr-2" />
             Portfolio View
           </Button>
@@ -300,7 +363,6 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
         )}
       </div>
 
-      {/* Edit Wallet Dialog */}
       <EditWalletDialog
         key={editingWallet?.id}
         wallet={editingWallet}
@@ -309,13 +371,25 @@ export default function WalletsDashboard({ wallets, user }: WalletsDashboardProp
         onUpdateWallet={handleUpdateWallet}
       />
 
-      {/* Delete Wallet Dialog */}
       <DeleteWalletDialog
         wallet={deletingWallet}
         open={!!deletingWallet}
         onOpenChange={(open) => !open && setDeletingWallet(null)}
         onDeleteWallet={handleConfirmDelete}
       />
-    </div>
+
+      <TransferMoneyDialog
+        open={transferDialogOpen}
+        onOpenChange={(open) => {
+          setTransferDialogOpen(open);
+          if (!open) {
+            setSelectedWalletForTransfer(undefined);
+          }
+        }}
+        onTransferMoney={handleTransferSubmit}
+        wallets={walletsData}
+        selectedWalletId={selectedWalletForTransfer}
+      />
+    </div >
   );
 }
