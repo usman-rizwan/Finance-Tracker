@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -30,6 +30,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { Plus, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import numberToWords from 'number-to-words';
 import { createTransactionSchema, type CreateTransactionFormData } from "~/lib/validation-schemas";
 
 interface AddTransactionDialogProps {
@@ -43,13 +44,14 @@ interface AddTransactionDialogProps {
   isLoading?: boolean;
 }
 
-export default function AddTransactionDialog({ 
-  wallets, 
+export default function AddTransactionDialog({
+  wallets,
   onAddTransaction,
   isLoading = false
 }: AddTransactionDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [amountInWords, setAmountInWords] = useState('');
 
   const form = useForm<CreateTransactionFormData>({
     resolver: zodResolver(createTransactionSchema),
@@ -63,9 +65,26 @@ export default function AddTransactionDialog({
     }
   });
 
+  useEffect(() => {
+    form.setValue('type', selectedType);
+  }, [selectedType]);
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        type: selectedType,
+        walletId: '',
+        amount: '',
+        title: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  }, [open, selectedType]);
+
   const handleSubmit = async (data: CreateTransactionFormData) => {
     if (!onAddTransaction) return;
-    
+
     try {
       await onAddTransaction(data);
       form.reset();
@@ -77,7 +96,18 @@ export default function AddTransactionDialog({
 
   const handleTypeChange = (type: 'INCOME' | 'EXPENSE') => {
     setSelectedType(type);
-    form.setValue('type', type);
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const amount = e.target.value;
+    form.setValue('amount', amount);
+
+    if (amount) {
+      const amountInWords = numberToWords.toWords(amount);
+      setAmountInWords(amountInWords);
+    } else {
+      setAmountInWords('');
+    }
   };
 
   return (
@@ -177,7 +207,7 @@ export default function AddTransactionDialog({
               )}
             />
 
-            {/* Amount and Title */}
+            {/* Amount and Date */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -191,10 +221,16 @@ export default function AddTransactionDialog({
                         step="0.01"
                         min="0"
                         placeholder="0.00"
+                         onChange={handleAmountChange}
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
+                    {amountInWords && (
+                      <p className="mt-1 text-sm text-gray-500 italic">
+                        In words: {amountInWords.charAt(0).toUpperCase() + amountInWords.slice(1)}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -259,19 +295,8 @@ export default function AddTransactionDialog({
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  'Add Transaction'
-                )}
+              <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin" /> : 'Save'}
               </Button>
             </DialogFooter>
           </form>

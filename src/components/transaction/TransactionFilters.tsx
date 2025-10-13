@@ -240,7 +240,7 @@ export default function TransactionFilters({
 
         {/* Current Filter Summary */}
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 capitalize">
             <strong>Current filters:</strong> {' '}
             {selectedType ? `${selectedType.toLowerCase()} transactions` : 'all transactions'} {' '}
             {selectedWallet !== 'all' && wallets.find(w => w.id === selectedWallet) && 
