@@ -41,11 +41,11 @@ export default async function ActivityPage({
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 md:p-10">
       <div className="mx-auto max-w-7xl space-y-10">
         {/* Header */}
-        <div className="text-center space-y-6">
-          <h1 className="text-5xl font-bold tracking-tight text-slate-900">
+        <div className="text-left space-y-4">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
             Financial Overview
           </h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base text-left text-slate-600">
             Track your income and expenses with detailed insights and flexible filtering options
           </p>
         </div>

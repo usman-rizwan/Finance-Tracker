@@ -146,7 +146,7 @@ export async function ActivityTable({ searchParams, userId }: Props) {
         <Table className="min-w-full">
           <TableHeader>
             <TableRow className="bg-slate-50">
-              <TableHead className="w-[36%] px-6 py-4 text-slate-800 font-semibold">No.</TableHead>
+              <TableHead className=" px-6 py-4 text-slate-800 font-semibold">No.</TableHead>
               <TableHead className="w-[36%] px-6 py-4 text-slate-800 font-semibold">Transaction</TableHead>
               <TableHead className="w-[12%] px-6 py-4 text-slate-800 font-semibold">Type</TableHead>
               <TableHead className="w-[18%] px-6 py-4 text-slate-800 font-semibold">Date</TableHead>
