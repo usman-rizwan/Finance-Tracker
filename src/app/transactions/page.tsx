@@ -1,43 +1,22 @@
-import { ProtectedRoute } from "~/components/auth/ProtectedRoute";
+import { redirect } from "next/navigation";
 import { getServerSession } from "~/lib/auth";
-import { db } from "~/server/db";
-import { getTransactions } from "./action";
-import TransactionsDasboard from "./TransactionsDasboard";
-import { getWallets } from "../wallet/action";
-import { startOfMonth, endOfMonth } from 'date-fns'
+import TransactionsData from "./TransactionData";
 
 export default async function TransactionsPage() {
-  const { user } = await getServerSession();
+    const session = await getServerSession();
 
-  const wallets = await getWallets(user.id);
-  const currentDate = new Date();
+    if (!session?.user) {
+        redirect("/sign-in");
+    }
 
-  const startDate = startOfMonth(currentDate);
-  const endDate = endOfMonth(currentDate);
+    const user = session.user;
 
-  const rawTransactions = await getTransactions(user.id, {
-    startDate,
-    endDate,
-    limit: 50
-  });
-  const transactions = rawTransactions
-    .filter(transaction => transaction.type === 'INCOME' || transaction.type === 'EXPENSE')
-    .map((transaction) => ({
-      ...transaction,
-      type: transaction.type as 'INCOME' | 'EXPENSE',
-      amount: transaction.amount.toString(),
-      date: (transaction.date as any)?.toISOString ? (transaction.date as any).toISOString() : String(transaction.date),
-      createdAt: transaction.createdAt.toISOString(),
-      updatedAt: transaction.updatedAt.toISOString()
-    }));
-
-  return (
-    <ProtectedRoute>
-      <TransactionsDasboard
-        transactions={transactions}
-        wallets={wallets}
-        userId={user.id}
-      />
-    </ProtectedRoute>
-  );
+    return (
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
+            
+        
+            <TransactionsData userId={user.id} />
+        </div>
+    );
 }

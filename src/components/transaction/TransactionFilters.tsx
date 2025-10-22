@@ -60,10 +60,6 @@ export default function TransactionFilters({
   const start = startOfMonth(new Date(lastMonth));
   const end = endOfMonth(new Date(lastMonth));
 
-  console.log('lastMonth:', lastMonth);
-  console.log('startOfMonth(lastMonth):', start);
-  console.log('endOfMonth(lastMonth):', end);
-
   return {
     startDate: start,
     endDate: end
