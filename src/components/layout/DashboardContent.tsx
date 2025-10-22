@@ -33,14 +33,7 @@ export default function DashboardContent({
   return (
     
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back, <span className="capitalize 
-          
-          ">{userName}!</span></p>
-        </div>
-      </div>
+  
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
