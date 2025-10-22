@@ -18,9 +18,9 @@ export const auth = betterAuth({
 export const getServerSession = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session || !session.user) {
-    redirect("/sign-in");
-  }
+  // if (!session || !session.user) {
+  //   redirect("/sign-in");
+  // }
 
   return session;
 };
