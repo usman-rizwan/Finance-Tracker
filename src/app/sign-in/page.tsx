@@ -1,5 +1,7 @@
 import { TrendingUp, BarChart3, PieChart, Wallet } from "lucide-react";
+import { redirect } from "next/navigation";
 import { SignInForm } from "~/components/auth/SignInForm";
+import { getServerSession } from "~/lib/auth";
 
 export const metadata = {
   title: "Sign In",
@@ -7,7 +9,11 @@ export const metadata = {
 };
 
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await getServerSession();
+  if (session?.user) {
+    redirect("/dashboard");
+  }
   return (
     <div className="min-h-screen flex">
       {/* Left Section - Branding */}
