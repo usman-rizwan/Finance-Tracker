@@ -1,3 +1,4 @@
+"use server";
 import { db } from "~/server/db";
 
 const fetchMonthlyBalance = async (userId: string, month?: number, year?: number) => {

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "~/contexts/AuthContext";
 
@@ -10,26 +10,12 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
-      // Add a small delay to prevent immediate redirects
-      const timer = setTimeout(() => {
-        setShouldRedirect(true);
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setShouldRedirect(false);
+      router.replace("/sign-in"); 
     }
-  }, [user, loading]);
-
-  useEffect(() => {
-    if (shouldRedirect) {
-      router.push("/sign-in");
-    }
-  }, [shouldRedirect, router]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (
