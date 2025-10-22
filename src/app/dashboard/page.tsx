@@ -3,52 +3,21 @@ import { ProtectedRoute } from "~/components/auth/ProtectedRoute";
 import DashboardContent from "~/components/layout/DashboardContent";
 import { getServerSession } from "~/lib/auth";
 import { db } from "~/server/db";
+import { fetchMonthlyBalance } from "./action";
 
 export default async function DashboardPage() {
   const { user } = await getServerSession();
 
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1; 
-  const currentYear = currentDate.getFullYear();
   const userId = user?.id as string;
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
 
-let monthlyBalance = await db.monthlyBalance.aggregate({
-  _sum: {
-    openingBalance: true,
-    totalIncome: true,
-    totalExpense: true,
-    closingBalance: true,
-  },
-  _count: {
-    walletId: true,
-  },
-  where: {
-    userId,
-    month: currentMonth,
-    year: currentYear,
-  },
-});
 
-const isMonthlyBalanceEmpty = Object.values(monthlyBalance._sum).every((val) => val === null);
+  const monthlyBalancePromise = fetchMonthlyBalance(userId, currentMonth, currentYear);
 
-if (isMonthlyBalanceEmpty) {
-  monthlyBalance = await db.monthlyBalance.aggregate({
-    _sum: {
-      openingBalance: true,
-      totalIncome: true,
-      totalExpense: true,
-      closingBalance: true,
-    },
-    _count: {
-      walletId: true,
-    },
-    where: {
-      userId,
-    },
-  });
-}
 
-  const recentTransactions = await db.transaction.findMany({
+  const recentTransactionsPromise = db.transaction.findMany({
     where: {
       userId,
     },
@@ -57,23 +26,37 @@ if (isMonthlyBalanceEmpty) {
     },
     take: 10,
   });
-console.log('recentTransactions', recentTransactions);
+
+  const [monthlyBalance, recentTransactions] = await Promise.all([
+    monthlyBalancePromise,
+    recentTransactionsPromise,
+  ]);
+  const isMonthlyBalanceEmpty = Object.values(monthlyBalance._sum).every(
+    (val) => val === null
+  );
+
+  let finalMonthlyBalance = monthlyBalance;
+
+  if (isMonthlyBalanceEmpty) {
+    finalMonthlyBalance = await fetchMonthlyBalance(userId);
+  }
 
   return (
     <ProtectedRoute>
       <DashboardContent
+
         totalBalance={
-          monthlyBalance?._sum?.closingBalance?.toFixed(2) ?? "0.00"
+          finalMonthlyBalance?._sum?.closingBalance?.toFixed(2) ?? "0.00"
         }
-        income={monthlyBalance?._sum?.totalIncome?.toFixed(2) ?? "0.00"}
-        expense={monthlyBalance?._sum?.totalExpense?.toFixed(2) ?? "0.00"}
-        openingBalance={monthlyBalance?._sum?.openingBalance?.toFixed(2) ?? "0.00"}
-        closingBalance={monthlyBalance?._sum?.closingBalance?.toFixed(2) ?? "0.00"}
+        income={finalMonthlyBalance?._sum?.totalIncome?.toFixed(2) ?? "0.00"}
+        expense={finalMonthlyBalance?._sum?.totalExpense?.toFixed(2) ?? "0.00"}
+        openingBalance={finalMonthlyBalance?._sum?.openingBalance?.toFixed(2) ?? "0.00"}
+        closingBalance={finalMonthlyBalance?._sum?.closingBalance?.toFixed(2) ?? "0.00"}
         savings={
-          monthlyBalance
+          finalMonthlyBalance
             ? (
-                (monthlyBalance._sum?.totalIncome ?? 0) -
-                (monthlyBalance._sum?.totalExpense ?? 0)
+                (finalMonthlyBalance._sum?.totalIncome ?? 0) -
+                (finalMonthlyBalance._sum?.totalExpense ?? 0)
               ).toFixed(2)
             : "0.00"
         }
