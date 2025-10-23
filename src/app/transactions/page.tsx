@@ -12,10 +12,7 @@ export default async function TransactionsPage() {
     const user = session.user;
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-            
-        
+        <div className="space-y-6">    
             <TransactionsData userId={user.id} />
         </div>
     );
