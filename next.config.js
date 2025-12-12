@@ -9,9 +9,9 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    ppr: "incremental",
-  },
+  // experimental: {
+  //   ppr: "incremental",
+  // },
 };
 
 export default config;
